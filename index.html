@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woven Hugs | Admin & Shop</title>
+    <style>
+        :root { --primary: #333333; --bg-light: #f4f4f4; --white: #ffffff; --accent: #777777; --text: #222222; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-light); margin: 0; color: var(--text); }
+        header { background: var(--primary); color: var(--white); padding: 40px 20px; text-align: center; }
+        .hidden { display: none !important; }
+        .container { width: 95%; max-width: 900px; margin: 40px auto; padding: 20px; background: var(--white); border-radius: 12px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn { background: var(--primary); color: var(--white); padding: 12px 25px; border: 1px solid var(--primary); border-radius: 4px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.2s; }
+        .btn:hover { background: var(--accent); }
+        .btn-delete { background: #cc0000; border-color: #cc0000; font-size: 12px; padding: 8px 15px; }
+        .card { background: var(--white); padding: 15px; border-radius: 8px; margin: 10px; display: inline-block; width: 200px; border: 1px solid #ddd; vertical-align: top; }
+        .card img { width: 100%; border-radius: 4px; margin-bottom: 10px; height: 150px; object-fit: cover; background: #eee; }
+        input { padding: 12px; border-radius: 4px; border: 1px solid #ccc; width: 85%; margin-bottom: 15px; outline: none; }
+        #upload-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: var(--white); padding: 30px; border-radius: 8px; width: 320px; }
+    </style>
+</head>
+<body onload="renderItems()">
+
+    <!-- LOGIN SECTION -->
+    <div id="login-section">
+        <header><h1>Woven Hugs</h1></header>
+        <div class="container">
+            <h2>Welcome</h2>
+            <p>Please enter your name or email to enter the shop.</p>
+            <input type="text" id="usernameInput" placeholder="Enter Name or Email"> <br>
+            <button class="btn" onclick="checkLogin()">Enter Shop</button>
+        </div>
+    </div>
+
+    <!-- USER SHOP PAGE -->
+    <div id="user-page" class="hidden">
+        <header>
+            <h1>Woven Hugs</h1>
+            <p>I crochet plushies for kids who love stuffed animals, and 15% of my profits go to support the autistic community.</p>
+        </header>
+        <div class="container">
+            <input type="text" id="searchBar" placeholder="Search for a friend..." onkeyup="searchItems()">
+            <div id="shop-items-user">
+                <!-- Items you upload will appear here -->
+            </div>
+            <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+            <h3>Contact Me</h3>
+            <p>📧 Email: xandermangreat@gmail.com</p>
+            <p style="font-style:italic; font-size: 0.85em;">*I take orders one at a time; if I don't respond to you I'm busy with someone else.</p>
+            <button class="btn" style="background:var(--accent)" onclick="location.reload()">Logout</button>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-page" class="hidden">
+        <header><h1>Admin Control Room</h1></header>
+        <div class="container">
+            <nav style="margin-bottom: 20px;">
+                <button class="btn" onclick="openUpload()">+ Upload New Plushie</button>
+                <button class="btn" style="background:var(--accent)" onclick="location.reload()">Logout</button>
+            </nav>
+            <h3>Manage Your Inventory:</h3>
+            <div id="shop-items-admin">
+                <!-- Admin sees items with delete buttons here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div id="upload-modal" class="hidden">
+        <div class="modal-content">
+            <h3>New Plushie Details</h3>
+            <input type="text" id="itemName" placeholder="Name (e.g. Blue Bee)">
+            <input type="text" id="itemPrice" placeholder="Price (e.g. $15.00)">
+            <input type="text" id="itemImg" placeholder="Image URL (Link)">
+            <button class="btn" onclick="savePlushie()">Post to Website</button>
+            <button class="btn" style="background:var(--accent)" onclick="closeUpload()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Shop starts empty
+        let items = []; 
+
+        function checkLogin() {
+            let user = document.getElementById('usernameInput').value.toLowerCase().trim();
+            document.getElementById('login-section').classList.add('hidden');
+            if (user === 'xandermangreat@gmail.com') { 
+                document.getElementById('admin-page').classList.remove('hidden');
+            } else {
+                document.getElementById('user-page').classList.remove('hidden');
+            }
+        }
+
+        function openUpload() { document.getElementById('upload-modal').classList.remove('hidden'); }
+        function closeUpload() { document.getElementById('upload-modal').classList.add('hidden'); }
+
+        function savePlushie() {
+            let name = document.getElementById('itemName').value;
+            let price = document.getElementById('itemPrice').value;
+            let img = document.getElementById('itemImg').value || 'https://via.placeholder.com';
+            let id = Date.now();
+
+            if(name && price) {
+                items.push({ id, name, price, img });
+                renderItems();
+                closeUpload();
+                document.getElementById('itemName').value = "";
+                document.getElementById('itemPrice').value = "";
+                document.getElementById('itemImg').value = "";
+            }
+        }
+
+        function deleteItem(id) {
+            items = items.filter(item => item.id !== id);
+            renderItems();
+        }
+
+        function renderItems() {
+            const userDiv = document.getElementById('shop-items-user');
+            const adminDiv = document.getElementById('shop-items-admin');
+            userDiv.innerHTML = ""; adminDiv.innerHTML = "";
+
+            if(items.length === 0) {
+                userDiv.innerHTML = "<p>The shop is currently resting. Check back soon for new friends!</p>";
+                adminDiv.innerHTML = "<p>Your shop is empty. Click 'Upload' to add a plushie.</p>";
+            } else {
+                items.forEach(item => {
+                    userDiv.innerHTML += `<div class="card"><img src="${item.img}"><h3>${item.name}</h3><p>${item.price}</p><button class="btn">Order</button></div>`;
+                    adminDiv.innerHTML += `<div class="card"><img src="${item.img}"><h3>${item.name}</h3><p>${item.price}</p><button class="btn btn-delete" onclick="deleteItem(${item.id})">Delete Item</button></div>`;
+                });
+            }
+        }
+
+        function searchItems() {
+            let filter = document.getElementById('searchBar').value.toLowerCase();
+            let cards = document.querySelectorAll('#shop-items-user .card');
+            cards.forEach(card => {
+                let name = card.querySelector('h3').innerText.toLowerCase();
+                card.style.display = name.includes(filter) ? "inline-block" : "none";
+            });
+        }
+    </script>
+</body>
+</html>
